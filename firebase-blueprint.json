@@ -1,0 +1,505 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile associated with an organization and farm management role",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "format": "email", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["owner", "manager", "agronomist", "member"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "email", "displayName", "organizationId", "role"]
+    },
+    "Organization": {
+      "title": "Organization",
+      "description": "Multi-tenant tenant root isolating an agribusiness and its authorized users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 256 },
+        "ownerId": { "type": "string", "maxLength": 128 },
+        "state": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "ownerId", "state"]
+    },
+    "Farm": {
+      "title": "Farm",
+      "description": "Commercial farm estate parcel location and total acreage",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 256 },
+        "state": { "type": "string", "maxLength": 64 },
+        "lga": { "type": "string", "maxLength": 64 },
+        "locationDetails": { "type": "string", "maxLength": 512 },
+        "totalArea": { "type": "number" },
+        "unit": { "type": "string", "enum": ["hectares", "acres"] },
+        "soilProfile": { "type": "string", "maxLength": 256 },
+        "ownership": { "type": "string", "enum": ["Owned", "Leased", "Outgrower Scheme"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "organizationId", "name", "state", "totalArea", "unit"]
+    },
+    "Field": {
+      "title": "Field Block",
+      "description": "Subdivided field plot with distinct irrigation infrastructure and boundaries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "farmId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "code": { "type": "string", "maxLength": 32 },
+        "size": { "type": "number" },
+        "unit": { "type": "string", "enum": ["hectares", "acres"] },
+        "irrigation": { "type": "string", "enum": ["Rain-fed", "Drip Irrigation", "Borehole Sprinkler", "Canal Furrow"] },
+        "currentCropId": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["active", "fallow", "preparing", "harvested"] },
+        "notes": { "type": "string", "maxLength": 512 }
+      },
+      "required": ["id", "organizationId", "farmId", "name", "size", "unit", "irrigation", "status"]
+    },
+    "Crop": {
+      "title": "Planted Crop",
+      "description": "Crop enterprise cycle tracked through phenological stages to harvest",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "farmId": { "type": "string", "maxLength": 128 },
+        "fieldId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "variety": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "enum": ["Cereal / Grain", "Root & Tuber", "Horticulture / Veg", "Legume", "Cash Crop"] },
+        "plantingDate": { "type": "string", "maxLength": 32 },
+        "expectedHarvestDate": { "type": "string", "maxLength": 32 },
+        "actualHarvestDate": { "type": "string", "maxLength": 32 },
+        "targetYieldKg": { "type": "number" },
+        "stage": { "type": "string", "enum": ["land_preparation", "planting", "vegetative", "flowering_fruiting", "maturing", "harvesting", "completed"] },
+        "seedSupplier": { "type": "string", "maxLength": 128 },
+        "spacingNotes": { "type": "string", "maxLength": 256 },
+        "activeStatus": { "type": "boolean" }
+      },
+      "required": ["id", "organizationId", "farmId", "fieldId", "name", "variety", "category", "stage"]
+    },
+    "Expense": {
+      "title": "Operating Expense",
+      "description": "Financial expenditure for seeds, fertilizers, chemicals, labor, or haulage",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "farmId": { "type": "string", "maxLength": 128 },
+        "fieldId": { "type": "string", "maxLength": 128 },
+        "cropId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 32 },
+        "category": { "type": "string", "enum": ["seeds_seedlings", "fertilizer_chemicals", "mechanization_fuel", "labor", "logistics_packaging", "lease_utilities", "other"] },
+        "description": { "type": "string", "maxLength": 256 },
+        "amount": { "type": "number" },
+        "vendor": { "type": "string", "maxLength": 128 },
+        "receiptNumber": { "type": "string", "maxLength": 64 },
+        "paymentMethod": { "type": "string", "enum": ["Bank Transfer", "Cash", "Mobile Money", "Supplier Credit"] },
+        "paymentStatus": { "type": "string", "enum": ["paid", "pending"] }
+      },
+      "required": ["id", "organizationId", "farmId", "date", "category", "description", "amount", "paymentMethod", "paymentStatus"]
+    },
+    "HarvestRecord": {
+      "title": "Harvest Record",
+      "description": "Physical produce harvested from a field plot",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "cropId": { "type": "string", "maxLength": 128 },
+        "fieldId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 32 },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "enum": ["kg", "metric_tons", "bags_50kg", "crates_25kg", "tubers"] },
+        "normalizedKg": { "type": "number" },
+        "gradeQuality": { "type": "string", "enum": ["Grade A Premium", "Grade B Standard", "Industrial Processing"] },
+        "storageLocation": { "type": "string", "maxLength": 128 },
+        "notes": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["id", "organizationId", "cropId", "fieldId", "date", "quantity", "unit", "normalizedKg"]
+    },
+    "SaleRecord": {
+      "title": "Sale Record",
+      "description": "Recognized off-take sale transaction with realized cash and buyer credit",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "cropId": { "type": "string", "maxLength": 128 },
+        "harvestId": { "type": "string", "maxLength": 128 },
+        "invoiceNumber": { "type": "string", "maxLength": 64 },
+        "buyerName": { "type": "string", "maxLength": 128 },
+        "buyerPhone": { "type": "string", "maxLength": 64 },
+        "buyerType": { "type": "string", "enum": ["Off-taker Processor", "Wholesale Aggregator", "Open Market Trader", "Retail Buyer"] },
+        "date": { "type": "string", "maxLength": 32 },
+        "quantitySold": { "type": "number" },
+        "unit": { "type": "string", "enum": ["kg", "metric_tons", "bags_50kg", "crates_25kg", "tubers"] },
+        "normalizedKg": { "type": "number" },
+        "unitPrice": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "amountPaid": { "type": "number" },
+        "outstandingAmount": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["paid", "outstanding", "partial"] },
+        "notes": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["id", "organizationId", "cropId", "invoiceNumber", "buyerName", "date", "quantitySold", "unit", "unitPrice", "totalAmount", "amountPaid", "outstandingAmount", "paymentStatus"]
+    },
+    "InventoryItem": {
+      "title": "Inventory Item",
+      "description": "Tracked input commodity stored in farm warehouse",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "farmId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "enum": ["Fertilizer", "Agrochemical", "Seed", "Fuel / Diesel", "Equipment Spares"] },
+        "currentStock": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 32 },
+        "reorderLevel": { "type": "number" },
+        "costPerUnit": { "type": "number" },
+        "lastRestocked": { "type": "string", "maxLength": 32 },
+        "supplier": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "organizationId", "farmId", "name", "category", "currentStock", "unit", "reorderLevel"]
+    },
+    "FarmTask": {
+      "title": "Farm Task",
+      "description": "Field operational task scheduled for an assignee",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 128 },
+        "description": { "type": "string", "maxLength": 512 },
+        "dueDate": { "type": "string", "maxLength": 32 },
+        "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+        "status": { "type": "string", "enum": ["pending", "in_progress", "completed", "overdue"] },
+        "assignedTo": { "type": "string", "maxLength": 128 },
+        "fieldId": { "type": "string", "maxLength": 128 },
+        "cropId": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["id", "organizationId", "title", "dueDate", "priority", "status", "assignedTo"]
+    },
+    "TeamMember": {
+      "title": "Team Member",
+      "description": "Farm staff, agronomist, supervisor, or accountant in the organization",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["Farm Operations Lead", "Chief Agronomist", "Field Supervisor", "Irrigation Technician", "Accounts Officer"] },
+        "phone": { "type": "string", "maxLength": 64 },
+        "email": { "type": "string", "format": "email", "maxLength": 128 },
+        "state": { "type": "string", "maxLength": 64 },
+        "activeStatus": { "type": "boolean" }
+      },
+      "required": ["id", "organizationId", "name", "role", "email"]
+    },
+    "CropSeason": {
+      "title": "Crop Season",
+      "description": "Agricultural crop season (Early Rains, Late Rains, Dry Season Irrigation)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "farmId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "seasonType": { "type": "string", "enum": ["Early Rains (Main)", "Late Rains (Minor)", "Dry Season (Irrigation)", "All-Year Perennial"] },
+        "startDate": { "type": "string", "maxLength": 32 },
+        "endDate": { "type": "string", "maxLength": 32 },
+        "targetAcreage": { "type": "number" },
+        "unit": { "type": "string", "enum": ["hectares", "acres"] },
+        "budget": { "type": "number" },
+        "status": { "type": "string", "enum": ["planning", "active", "completed"] },
+        "notes": { "type": "string", "maxLength": 512 }
+      },
+      "required": ["id", "organizationId", "farmId", "name", "seasonType", "startDate", "endDate", "status"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Agricultural input, equipment, labor, and logistics vendors",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 256 },
+        "category": { "type": "string" },
+        "contactPerson": { "type": "string", "maxLength": 128 },
+        "phone": { "type": "string", "maxLength": 64 },
+        "email": { "type": "string", "maxLength": 128 },
+        "address": { "type": "string", "maxLength": 256 },
+        "state": { "type": "string", "maxLength": 64 },
+        "paymentTerms": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "notes": { "type": "string", "maxLength": 512 }
+      },
+      "required": ["id", "organizationId", "name", "category", "contactPerson", "phone"]
+    },
+    "PurchaseRecord": {
+      "title": "Purchase Record",
+      "description": "Procurement orders of farm inputs with payment breakdown",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "farmId": { "type": "string", "maxLength": 128 },
+        "purchaseOrderNumber": { "type": "string", "maxLength": 64 },
+        "supplierId": { "type": "string", "maxLength": 128 },
+        "supplierName": { "type": "string", "maxLength": 256 },
+        "date": { "type": "string", "maxLength": 32 },
+        "totalAmount": { "type": "number" },
+        "amountPaid": { "type": "number" },
+        "outstandingAmount": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["paid", "partial", "unpaid"] },
+        "deliveryStatus": { "type": "string", "enum": ["received", "pending", "partially_received"] }
+      },
+      "required": ["id", "organizationId", "farmId", "purchaseOrderNumber", "supplierName", "date", "totalAmount"]
+    },
+    "StockMovement": {
+      "title": "Stock Movement",
+      "description": "Inbound, outbound, and audit adjustment transactions for warehouse inputs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "farmId": { "type": "string", "maxLength": 128 },
+        "inventoryItemId": { "type": "string", "maxLength": 128 },
+        "inventoryItemName": { "type": "string", "maxLength": 256 },
+        "type": { "type": "string", "enum": ["IN", "OUT", "ADJUSTMENT", "RETURN"] },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "maxLength": 32 },
+        "date": { "type": "string", "maxLength": 32 },
+        "performedBy": { "type": "string", "maxLength": 128 },
+        "reason": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["id", "organizationId", "farmId", "inventoryItemId", "type", "quantity", "unit", "date"]
+    },
+    "ReceiptRecord": {
+      "title": "Receipt Voucher",
+      "description": "Audit receipts and digital payment vouchers for farm expenses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "farmId": { "type": "string", "maxLength": 128 },
+        "receiptNumber": { "type": "string", "maxLength": 64 },
+        "title": { "type": "string", "maxLength": 256 },
+        "vendor": { "type": "string", "maxLength": 256 },
+        "date": { "type": "string", "maxLength": 32 },
+        "amount": { "type": "number" },
+        "auditStatus": { "type": "string", "enum": ["verified", "pending_audit", "flagged"] }
+      },
+      "required": ["id", "organizationId", "farmId", "receiptNumber", "vendor", "date", "amount"]
+    },
+    "Customer": {
+      "title": "Customer / Off-taker",
+      "description": "Commodity buyer, industrial off-taker, or market aggregator with contact and credit terms",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 256 },
+        "buyerType": { "type": "string", "enum": ["Off-taker Processor", "Wholesale Aggregator", "Open Market Trader", "Retail Buyer", "Export Merchant"] },
+        "contactPerson": { "type": "string", "maxLength": 128 },
+        "phone": { "type": "string", "maxLength": 64 },
+        "email": { "type": "string", "maxLength": 128 },
+        "address": { "type": "string", "maxLength": 256 },
+        "state": { "type": "string", "maxLength": 64 },
+        "marketHub": { "type": "string", "maxLength": 128 },
+        "paymentTerms": { "type": "string", "enum": ["Cash on Delivery", "7 Days Net", "14 Days Net", "30 Days Net", "50% Advance & Balance on Delivery"] },
+        "creditLimit": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "notes": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "organizationId", "name", "buyerType", "contactPerson", "phone", "state"]
+    },
+    "SalePayment": {
+      "title": "Sale Payment Remittance",
+      "description": "Customer cash or bank payment credited against a produce sales invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "saleId": { "type": "string", "maxLength": 128 },
+        "invoiceNumber": { "type": "string", "maxLength": 64 },
+        "customerId": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 256 },
+        "date": { "type": "string", "maxLength": 32 },
+        "amount": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["Bank Transfer", "Cash", "Mobile Money", "Cheque", "POS"] },
+        "referenceNumber": { "type": "string", "maxLength": 128 },
+        "bankName": { "type": "string", "maxLength": 128 },
+        "accountCredited": { "type": "string", "maxLength": 128 },
+        "receivedBy": { "type": "string", "maxLength": 128 },
+        "notes": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "organizationId", "saleId", "invoiceNumber", "customerName", "date", "amount", "paymentMethod"]
+    },
+    "ProduceAdjustment": {
+      "title": "Produce Stock Adjustment",
+      "description": "Post-harvest moisture reduction, sorting loss, seed retention, or shrinkage transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "cropId": { "type": "string", "maxLength": 128 },
+        "harvestId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 32 },
+        "quantity": { "type": "number" },
+        "unit": { "type": "string", "enum": ["kg", "metric_tons", "bags_50kg", "crates_25kg", "tubers"] },
+        "normalizedKg": { "type": "number" },
+        "reason": { "type": "string", "enum": ["moisture_loss_shrinkage", "sorting_reject", "seed_retention", "internal_consumption", "spoilage_damage", "physical_audit_reconciliation"] },
+        "notes": { "type": "string", "maxLength": 512 },
+        "performedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "organizationId", "cropId", "date", "quantity", "unit", "reason"]
+    },
+    "BillingTransaction": {
+      "title": "Paystack Billing Transaction",
+      "description": "Commercial subscription payment receipt generated via Paystack payment gateway",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "organizationId": { "type": "string", "maxLength": 128 },
+        "reference": { "type": "string", "maxLength": 128 },
+        "amountNgn": { "type": "number" },
+        "planId": { "type": "string", "enum": ["starter", "growth", "enterprise"] },
+        "planName": { "type": "string", "maxLength": 64 },
+        "billingCycle": { "type": "string", "enum": ["monthly", "annual"] },
+        "channel": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["success", "failed", "pending"] },
+        "paidAt": { "type": "string", "maxLength": 64 },
+        "customerEmail": { "type": "string", "format": "email", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 128 },
+        "farmName": { "type": "string", "maxLength": 256 },
+        "description": { "type": "string", "maxLength": 256 },
+        "receiptNumber": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "organizationId", "reference", "amountNgn", "planId", "status", "paidAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles indexed by Firebase Auth UID"
+    },
+    "/organizations/{organizationId}": {
+      "schema": "Organization",
+      "description": "Organization root document establishing multi-tenant ownership"
+    },
+    "/organizations/{organizationId}/farms/{farmId}": {
+      "schema": "Farm",
+      "description": "Farms owned by the organization"
+    },
+    "/organizations/{organizationId}/fields/{fieldId}": {
+      "schema": "Field",
+      "description": "Field parcels under the organization"
+    },
+    "/organizations/{organizationId}/crops/{cropId}": {
+      "schema": "Crop",
+      "description": "Crop production cycles under the organization"
+    },
+    "/organizations/{organizationId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Operating expense disbursements under the organization"
+    },
+    "/organizations/{organizationId}/harvests/{harvestId}": {
+      "schema": "HarvestRecord",
+      "description": "Harvest yield logs under the organization"
+    },
+    "/organizations/{organizationId}/sales/{saleId}": {
+      "schema": "SaleRecord",
+      "description": "Sales invoice transactions under the organization"
+    },
+    "/organizations/{organizationId}/inventory/{inventoryId}": {
+      "schema": "InventoryItem",
+      "description": "Warehouse input stocks under the organization"
+    },
+    "/organizations/{organizationId}/tasks/{taskId}": {
+      "schema": "FarmTask",
+      "description": "Operational duties under the organization"
+    },
+    "/organizations/{organizationId}/team/{teamMemberId}": {
+      "schema": "TeamMember",
+      "description": "Authorized staff profiles under the organization"
+    },
+    "/organizations/{organizationId}/seasons/{seasonId}": {
+      "schema": "CropSeason",
+      "description": "Agricultural crop seasons under the organization"
+    },
+    "/organizations/{organizationId}/suppliers/{supplierId}": {
+      "schema": "Supplier",
+      "description": "Approved input and service suppliers under the organization"
+    },
+    "/organizations/{organizationId}/purchases/{purchaseId}": {
+      "schema": "PurchaseRecord",
+      "description": "Procurement orders and supply invoices under the organization"
+    },
+    "/organizations/{organizationId}/stock_movements/{movementId}": {
+      "schema": "StockMovement",
+      "description": "Inbound, outbound, and adjustment inventory movements under the organization"
+    },
+    "/organizations/{organizationId}/receipts/{receiptId}": {
+      "schema": "ReceiptRecord",
+      "description": "Official expense vouchers and receipts under the organization"
+    },
+    "/organizations/{organizationId}/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Registered off-takers, aggregators, and buyers under the organization"
+    },
+    "/organizations/{organizationId}/sale_payments/{paymentId}": {
+      "schema": "SalePayment",
+      "description": "Customer payments and cash remittances credited against sales invoices"
+    },
+    "/organizations/{organizationId}/produce_adjustments/{adjustmentId}": {
+      "schema": "ProduceAdjustment",
+      "description": "Produce stock reductions, shrinkage, sorting losses, and internal use"
+    },
+    "/organizations/{organizationId}/billing_transactions/{transactionId}": {
+      "schema": "BillingTransaction",
+      "description": "Commercial subscription payment receipts generated via Paystack payment gateway"
+    },
+    "/organizations/{organizationId}/flocks/{flockId}": {
+      "description": "Poultry flocks registered under the organization"
+    },
+    "/organizations/{organizationId}/flock_movements/{movementId}": {
+      "description": "Flock population additions, mortalities, culls, and sales movements"
+    },
+    "/organizations/{organizationId}/poultry_houses/{houseId}": {
+      "description": "Poultry houses, pens, and cages under the organization"
+    },
+    "/organizations/{organizationId}/feed_inventory/{itemId}": {
+      "description": "Poultry feed warehouse stock, bag sizes, and reorder levels"
+    },
+    "/organizations/{organizationId}/feed_consumption/{recordId}": {
+      "description": "Feed intake records logged against specific poultry flocks"
+    },
+    "/organizations/{organizationId}/flock_health/{recordId}": {
+      "description": "Vaccination, medication, and veterinary health records"
+    },
+    "/organizations/{organizationId}/egg_production/{recordId}": {
+      "description": "Daily egg collection, saleable eggs, broken eggs, and laying rates"
+    },
+    "/organizations/{organizationId}/poultry_sales/{saleId}": {
+      "description": "Poultry live birds, dressed birds, eggs, and manure sales records"
+    }
+  }
+}
+

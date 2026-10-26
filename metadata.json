@@ -1,0 +1,8 @@
+{
+  "name": "FarmPilot",
+  "description": "Smart farm management and profit intelligence platform tailored for Nigerian crop farmers to track fields, crops, inventory, harvests, sales, and real net profit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

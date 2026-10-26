@@ -1,0 +1,365 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Deny everything by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Organization membership check using user profile or direct owner check
+    function isMemberOfOrg(orgId) {
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId == orgId) ||
+        (exists(/databases/$(database)/documents/organizations/$(orgId)) &&
+         get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerId == request.auth.uid)
+      );
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if isSignedIn() &&
+        request.auth.uid == userId &&
+        isValidId(userId) &&
+        incoming().id == userId &&
+        incoming().email is string &&
+        incoming().displayName is string;
+      allow update: if isSignedIn() &&
+        request.auth.uid == userId &&
+        incoming().id == existing().id &&
+        incoming().organizationId == existing().organizationId;
+      allow delete: if false;
+    }
+
+    // Multi-tenant Organizations
+    match /organizations/{orgId} {
+      allow get: if isSignedIn() && isMemberOfOrg(orgId);
+      allow list: if false; // Scoped access only
+      allow create: if isSignedIn() &&
+        isValidId(orgId) &&
+        incoming().id == orgId &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().name is string && incoming().name.size() <= 256;
+      allow update: if isSignedIn() &&
+        existing().ownerId == request.auth.uid &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().name is string;
+      allow delete: if false;
+
+      // Subcollections under Organization
+      match /farms/{farmId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(farmId) &&
+          incoming().organizationId == orgId &&
+          incoming().name is string &&
+          incoming().totalArea is number &&
+          incoming().totalArea > 0;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId &&
+          incoming().name is string;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /fields/{fieldId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(fieldId) &&
+          incoming().organizationId == orgId &&
+          incoming().name is string &&
+          incoming().size is number &&
+          incoming().size > 0;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId &&
+          incoming().name is string;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /crops/{cropId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(cropId) &&
+          incoming().organizationId == orgId &&
+          incoming().name is string;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /expenses/{expenseId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(expenseId) &&
+          incoming().organizationId == orgId &&
+          incoming().amount is number &&
+          incoming().amount >= 0 &&
+          incoming().description is string;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId &&
+          incoming().amount is number &&
+          incoming().amount >= 0;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /harvests/{harvestId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(harvestId) &&
+          incoming().organizationId == orgId &&
+          incoming().quantity is number &&
+          incoming().quantity >= 0;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /sales/{saleId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(saleId) &&
+          incoming().organizationId == orgId &&
+          incoming().totalAmount is number &&
+          incoming().totalAmount >= 0 &&
+          incoming().amountPaid is number &&
+          incoming().amountPaid >= 0;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId &&
+          incoming().totalAmount >= 0 &&
+          incoming().amountPaid >= 0;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /inventory/{inventoryId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(inventoryId) &&
+          incoming().organizationId == orgId &&
+          incoming().name is string;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /tasks/{taskId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(taskId) &&
+          incoming().organizationId == orgId &&
+          incoming().title is string;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /team/{teamMemberId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(teamMemberId) &&
+          incoming().organizationId == orgId &&
+          incoming().name is string;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /seasons/{seasonId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(seasonId) &&
+          incoming().organizationId == orgId &&
+          incoming().name is string;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /suppliers/{supplierId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(supplierId) &&
+          incoming().organizationId == orgId &&
+          incoming().name is string;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /purchases/{purchaseId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(purchaseId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /stock_movements/{movementId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(movementId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /receipts/{receiptId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(receiptId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /customers/{customerId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(customerId) &&
+          incoming().organizationId == orgId &&
+          incoming().name is string;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /sale_payments/{paymentId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(paymentId) &&
+          incoming().organizationId == orgId &&
+          incoming().amount is number &&
+          incoming().amount > 0;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /produce_adjustments/{adjustmentId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(adjustmentId) &&
+          incoming().organizationId == orgId &&
+          incoming().quantity is number &&
+          incoming().quantity > 0;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /billing_transactions/{transactionId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(transactionId) &&
+          incoming().organizationId == orgId &&
+          incoming().amountNgn is number &&
+          incoming().amountNgn >= 0;
+        allow update: if false;
+        allow delete: if false;
+      }
+
+      // Poultry Farming Subcollections
+      match /flocks/{flockId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(flockId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /flock_movements/{movementId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(movementId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /poultry_houses/{houseId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(houseId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /feed_inventory/{itemId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(itemId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /feed_consumption/{recordId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(recordId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /flock_health/{recordId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(recordId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /egg_production/{recordId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(recordId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+
+      match /poultry_sales/{saleId} {
+        allow get, list: if isMemberOfOrg(orgId);
+        allow create: if isMemberOfOrg(orgId) &&
+          isValidId(saleId) &&
+          incoming().organizationId == orgId;
+        allow update: if isMemberOfOrg(orgId) &&
+          incoming().organizationId == existing().organizationId;
+        allow delete: if isMemberOfOrg(orgId);
+      }
+    }
+  }
+}
