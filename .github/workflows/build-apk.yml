@@ -13,7 +13,17 @@ jobs:
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: 21 }
       - run: npm install --legacy-peer-deps
+      - run: npm install --legacy-peer-deps @capacitor/core@7 @capacitor/android@7 @capacitor/cli@7
       - run: npm run build
+      - name: Create Capacitor config
+        run: |
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.farmpilot.app",
+            "appName": "FarmPilot",
+            "webDir": "dist"
+          }
+          EOF
       - run: npx cap add android
       - run: npx cap sync android
       - name: Build debug APK
