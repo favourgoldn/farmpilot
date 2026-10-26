@@ -1,7 +1,9 @@
 import { initializeApp } from 'firebase/app';
 import {
   createUserWithEmailAndPassword,
-  getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
   GoogleAuthProvider,
   onAuthStateChanged,
   sendEmailVerification,
@@ -19,7 +21,10 @@ const app = initializeApp(firebaseConfig);
 
 // CRITICAL: The app will break without specifying firestoreDatabaseId
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
+// Mobile-friendly init: avoids the iframe-based resolver that fails inside Android WebViews
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+});
 export const googleProvider = new GoogleAuthProvider();
 
 export enum OperationType {
