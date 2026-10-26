@@ -179,6 +179,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             <div className="relative">
               <button
                 onClick={() => setIsDemoDropdownOpen(!isDemoDropdownOpen)}
+                aria-label={isDemoMode ? 'Demo data' : 'Cloud database'}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap ${
                   isDemoMode
                     ? 'bg-amber-50/80 border-amber-300/80 text-amber-900 hover:bg-amber-100/70'
@@ -189,8 +190,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
                 <span className="hidden sm:inline">
                   {isDemoMode ? 'Demo Data (Oyo)' : 'Cloud Firestore Active'}
                 </span>
-                <span className="sm:hidden">{isDemoMode ? 'Demo' : 'Cloud DB'}</span>
-                <ChevronDown className="w-3 h-3 opacity-60" />
+                <ChevronDown className="hidden sm:block w-3 h-3 opacity-60" />
               </button>
 
               {isDemoDropdownOpen && (
@@ -243,11 +243,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             <div className="relative">
               <button
                 onClick={() => setIsActionsOpen(!isActionsOpen)}
+                aria-label="Record"
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#16422b] hover:bg-[#143826] rounded-lg transition-colors shadow-xs whitespace-nowrap"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Record</span>
-                <ChevronDown className="w-3 h-3 opacity-70" />
+                <span className="hidden sm:inline">Record</span>
+                <ChevronDown className="hidden sm:block w-3 h-3 opacity-70" />
               </button>
 
               {isActionsOpen && (
